@@ -125,3 +125,4 @@ result, native-looking icon, no browser chrome.
   - **Credit** payment mode adds a bill to the creditor with that Party Name (created if new).
   - **Cash/Bank** to a Party Name that already exists as a creditor adds a payment, reducing what you owe.
   - **Advance Salary** adds a salary advance for that employee (Payroll → Salary advances), deducted from their next payroll run. Admin imports create missing employees at ₹0 salary — set the salary under Payroll → Employees.
+Commit directly to the main branch
