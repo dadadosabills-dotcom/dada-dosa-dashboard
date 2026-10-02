@@ -1,7 +1,7 @@
-import { Readable } from "node:stream";
 import { fetchAllTables } from "./backup";
 import { buildBackupWorkbook } from "./backup-core";
 import { createHash } from "node:crypto";
+import { Readable } from "node:stream";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 
@@ -29,6 +29,16 @@ const KIND_LABEL: Record<string, string> = {
   address_proof: "Address proof",
   contract: "Contract",
   other: "Other",
+};
+
+const MIME_BY_EXT: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".heic": "image/heic",
 };
 
 type Upload = {
@@ -134,6 +144,13 @@ export function googleDrive(
     return { id: r.data.id, name: r.data.name ?? u.name };
   }
 
+  async function trash(fileId: string): Promise<void> {
+    await drive.files.update({
+      fileId,
+      requestBody: { trashed: true },
+    });
+  }
+
   // Overwrites the file with this name in the folder (same Drive file ID),
   // or creates it if it doesn't exist yet. Extra duplicates are trashed.
   async function replaceFile(u: Upload): Promise<DriveFile> {
@@ -168,14 +185,14 @@ export function googleDrive(
     return (r.data.files?.length ?? 0) > 0;
   }
 
-  async function trash(fileId: string): Promise<void> {
-    await drive.files.update({
-      fileId,
-      requestBody: { trashed: true },
-    });
-  }
-
-  return { ensureFolder, listFolderFiles, upload, replaceFile, hasSourceKey, trash };
+  return {
+    ensureFolder,
+    listFolderFiles,
+    upload,
+    replaceFile,
+    hasSourceKey,
+    trash,
+  };
 }
 
 export type DriveClient = ReturnType<typeof googleDrive>;
@@ -190,16 +207,6 @@ export type BackupResult = {
   documentsFailed: number;
 };
 
-const MIME_BY_EXT: Record<string, string> = {
-  ".pdf": "application/pdf",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".heic": "image/heic",
-};
-
 export async function runBackup(
   supabase: SupabaseClient,
   drive: DriveClient
@@ -207,13 +214,18 @@ export async function runBackup(
   // 1) Dashboard data: ONE file, overwritten every run (latest data only)
   // ASSUMPTION: fetchAllTables(supabase) returns the tables, and
   // buildBackupWorkbook(tables) returns xlsx bytes (Buffer / Uint8Array / ArrayBuffer).
-  const tables = await fetchAllTables(supabase as any);
-    const dataRows = (Array.isArray(tables) ? tables : Object.values(tables as any)).reduce(
+  const tables: any = await fetchAllTables(supabase as any);
+
+  const dataRows = (
+    Array.isArray(tables) ? tables : Object.values(tables ?? {})
+  ).reduce(
     (n: number, t: any) =>
-      n + (Array.isArray(t) ? t.length : Array.isArray(t?.rows) ? t.rows.length : 0),
+      n +
+      (Array.isArray(t) ? t.length : Array.isArray(t?.rows) ? t.rows.length : 0),
     0
   );
-  const built: any = await buildBackupWorkbook(tables as any);
+
+  const built: any = await buildBackupWorkbook(tables);
   const bytes = Buffer.isBuffer(built)
     ? built
     : Buffer.from(built instanceof ArrayBuffer ? new Uint8Array(built) : built);
@@ -296,3 +308,4 @@ export async function runBackup(
     documentsSkipped,
     documentsFailed,
   };
+}
