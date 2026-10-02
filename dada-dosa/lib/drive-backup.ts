@@ -6,7 +6,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { google } from "googleapis";
 
 const ROOT = "Dada Dosa Backups";
-const DAILY_KEEP = 30;
 
 const clean = (s: unknown, max = 100) =>
   String(s ?? "")
@@ -120,7 +119,7 @@ export function googleDrive(
     return parent;
   }
 
-    async function upload(u: Upload): Promise<DriveFile> {
+  async function upload(u: Upload): Promise<DriveFile> {
     const r = await drive.files.create({
       requestBody: {
         name: u.name,
@@ -133,6 +132,26 @@ export function googleDrive(
 
     if (!r.data.id) throw new Error(`Drive upload failed for "${u.name}"`);
     return { id: r.data.id, name: r.data.name ?? u.name };
+  }
+
+  // Overwrites the file with this name in the folder (same Drive file ID),
+  // or creates it if it doesn't exist yet. Extra duplicates are trashed.
+  async function replaceFile(u: Upload): Promise<DriveFile> {
+    const matches = (await listFolderFiles(u.folderId)).filter(
+      (f) => f.name === u.name
+    );
+
+    if (matches.length === 0) return upload(u);
+
+    const [keep, ...dupes] = matches;
+    await drive.files.update({
+      fileId: keep.id,
+      media: { mimeType: u.mime, body: Readable.from(u.bytes) },
+      fields: "id,name",
+    });
+
+    for (const d of dupes) await trash(d.id);
+    return keep;
   }
 
   // True if a file with this source hash already exists in the folder.
@@ -156,17 +175,7 @@ export function googleDrive(
     });
   }
 
-  // Keeps the newest `keep` files (names start with YYYY-MM-DD) and trashes the rest.
-  async function pruneDaily(folderId: string, keep = DAILY_KEEP): Promise<number> {
-    const files = (await listFolderFiles(folderId)).sort((a, b) =>
-      b.name.localeCompare(a.name)
-    );
-    const old = files.slice(keep);
-    for (const f of old) await trash(f.id);
-    return old.length;
-  }
-
-  return { ensureFolder, listFolderFiles, upload, hasSourceKey, trash, pruneDaily };
+  return { ensureFolder, listFolderFiles, upload, replaceFile, hasSourceKey, trash };
 }
 
 export type DriveClient = ReturnType<typeof googleDrive>;
@@ -176,16 +185,23 @@ export type BackupResult = {
   documentsUploaded: number;
   documentsSkipped: number;
   documentsFailed: number;
-  oldBackupsTrashed: number;
+};
+
+const MIME_BY_EXT: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".heic": "image/heic",
 };
 
 export async function runDriveBackup(
   supabase: SupabaseClient,
   drive: DriveClient
 ): Promise<BackupResult> {
-  const today = day(new Date());
-
-  // 1) Daily workbook
+  // 1) Dashboard data: ONE file, overwritten every run (latest data only)
   // ASSUMPTION: fetchAllTables(supabase) returns the tables, and
   // buildBackupWorkbook(tables) returns xlsx bytes (Buffer / Uint8Array / ArrayBuffer).
   const tables = await fetchAllTables(supabase as any);
@@ -194,24 +210,17 @@ export async function runDriveBackup(
     ? built
     : Buffer.from(built instanceof ArrayBuffer ? new Uint8Array(built) : built);
 
-  const dailyFolder = await drive.ensureFolder([ROOT, "Daily"]);
-  const workbookName = `${today} dada-dosa-backup.xlsx`;
+  const dataFolder = await drive.ensureFolder([ROOT, "Dashboard Data"]);
+  const workbookName = "dada-dosa-dashboard-backup.xlsx";
 
-  const existing = await drive.listFolderFiles(dailyFolder);
-  for (const f of existing.filter((f) => f.name === workbookName)) {
-    await drive.trash(f.id); // re-run on the same day replaces the file
-  }
-
-  await drive.upload({
-    folderId: dailyFolder,
+  await drive.replaceFile({
+    folderId: dataFolder,
     name: workbookName,
     bytes,
     mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
 
-  const oldBackupsTrashed = await drive.pruneDaily(dailyFolder, DAILY_KEEP);
-
-  // 2) Uploaded documents (ID proofs, contracts, ...)
+  // 2) Uploaded files (images, PDFs, ...): copied once, never replaced or deleted
   // ASSUMPTION: a `documents` table with storage_path, kind, created_at
   // and a Supabase Storage bucket named "documents".
   const BUCKET = "documents";
@@ -249,12 +258,13 @@ export async function runDriveBackup(
         .download(path);
       if (dlErr || !blob) throw new Error(dlErr?.message ?? "download failed");
 
+      const ext = extOf(path);
       const base = clean(path.split("/").pop()?.replace(/\.[^.]+$/, ""));
       await drive.upload({
         folderId,
-        name: `${day(d.created_at)} ${base}${extOf(path)}`,
+        name: `${day(d.created_at)} ${base}${ext}`,
         bytes: Buffer.from(await blob.arrayBuffer()),
-        mime: blob.type || "application/octet-stream",
+        mime: blob.type || MIME_BY_EXT[ext] || "application/octet-stream",
         appProperties: { sourceKey: key },
       });
       documentsUploaded++;
@@ -264,11 +274,5 @@ export async function runDriveBackup(
     }
   }
 
-  return {
-    workbookName,
-    documentsUploaded,
-    documentsSkipped,
-    documentsFailed,
-    oldBackupsTrashed,
-  };
+  return { workbookName, documentsUploaded, documentsSkipped, documentsFailed };
 }
