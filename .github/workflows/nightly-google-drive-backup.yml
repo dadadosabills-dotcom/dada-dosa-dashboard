@@ -19,13 +19,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
+          cache-dependency-path: dada-dosa/package-lock.json
 
       - name: Install dependencies
+        working-directory: dada-dosa
         run: npm ci
 
       - name: Run backup
+        working-directory: dada-dosa
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
