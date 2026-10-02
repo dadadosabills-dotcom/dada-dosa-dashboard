@@ -59,27 +59,32 @@ export function googleDrive(
     auth,
   });
 
-  async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
-    const out: DriveFile[] = [];
-    let pageToken: string | undefined;
+async function listFolderFiles(folderId: string): Promise<DriveFile[]> {
+  const out: DriveFile[] = [];
+  let pageToken: string | undefined;
 
-    do {
-      const r = await drive.files.list({
-        q: `'${folderId}' in parents and trashed = false`,
-        fields: "nextPageToken, files(id,name)",
-        pageSize: 1000,
-        pageToken,
-      });
+  do {
+    const r = await drive.files.list({
+      q: `'${folderId}' in parents and trashed = false`,
+      fields: "nextPageToken, files(id,name)",
+      pageSize: 1000,
+      pageToken,
+    });
 
-      for (const f of r.data.files ?? []) {
-        if (f.id && f.name) out.push({ id: f.id, name: f.name });
+    for (const f of r.data.files ?? []) {
+      if (f.id && f.name) {
+        out.push({
+          id: f.id,
+          name: f.name,
+        });
       }
+    }
 
-      pageToken = r.data.nextPageToken ?? undefined;
-    } while (pageToken);
+    pageToken = r.data.nextPageToken ?? undefined;
+  } while (pageToken);
 
-    return out;
-  }
+  return out;
+}
 
   async function ensureFolder(parts: string[]): Promise<string> {
     let parent: string | undefined;
