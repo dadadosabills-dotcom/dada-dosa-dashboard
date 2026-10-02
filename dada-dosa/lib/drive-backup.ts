@@ -181,7 +181,10 @@ export function googleDrive(
 export type DriveClient = ReturnType<typeof googleDrive>;
 
 export type BackupResult = {
+  ok: boolean;
+  message: string;
   workbookName: string;
+  dataRows: number;
   documentsUploaded: number;
   documentsSkipped: number;
   documentsFailed: number;
@@ -197,7 +200,7 @@ const MIME_BY_EXT: Record<string, string> = {
   ".heic": "image/heic",
 };
 
-export async function runDriveBackup(
+export async function runBackup(
   supabase: SupabaseClient,
   drive: DriveClient
 ): Promise<BackupResult> {
@@ -205,6 +208,11 @@ export async function runDriveBackup(
   // ASSUMPTION: fetchAllTables(supabase) returns the tables, and
   // buildBackupWorkbook(tables) returns xlsx bytes (Buffer / Uint8Array / ArrayBuffer).
   const tables = await fetchAllTables(supabase as any);
+    const dataRows = (Array.isArray(tables) ? tables : Object.values(tables as any)).reduce(
+    (n: number, t: any) =>
+      n + (Array.isArray(t) ? t.length : Array.isArray(t?.rows) ? t.rows.length : 0),
+    0
+  );
   const built: any = await buildBackupWorkbook(tables as any);
   const bytes = Buffer.isBuffer(built)
     ? built
@@ -274,5 +282,17 @@ export async function runDriveBackup(
     }
   }
 
-  return { workbookName, documentsUploaded, documentsSkipped, documentsFailed };
-}
+  const ok = documentsFailed === 0;
+  const message =
+    `Dashboard backup updated (${workbookName}). ` +
+    `Files: ${documentsUploaded} uploaded, ${documentsSkipped} already backed up, ${documentsFailed} failed.`;
+
+  return {
+    ok,
+    message,
+    workbookName,
+    dataRows,
+    documentsUploaded,
+    documentsSkipped,
+    documentsFailed,
+  };
