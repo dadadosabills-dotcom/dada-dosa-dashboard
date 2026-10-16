@@ -248,7 +248,7 @@ export async function runBackup(
     0
   );
 
-  const built: any = await buildBackupWorkbook(tables);
+  const built: any = await buildBackupWorkbook(tables, "Google Drive auto-backup"); // CHANGED
   const bytes = Buffer.isBuffer(built)
     ? built
     : Buffer.from(built instanceof ArrayBuffer ? new Uint8Array(built) : built);
