@@ -21,8 +21,8 @@ const DOCS_LINK = { href: "/dashboard/documents", label: "Documents", icon: "doc
 // Plain staff (role "user") only get Sales and Expenses.
 const STAFF_HREFS = ["/dashboard/sales", "/dashboard/expenses"];
 const ACCOUNT_LINK = { href: "/dashboard/account", label: "My Account", icon: "account" };
-function linksFor(role: string) {
-  if (role === "user") return [...LINKS.filter(l => STAFF_HREFS.includes(l.href)), ACCOUNT_LINK];
+function linksFor(role: string, staffOverview = false) {
+  if (role === "user") return [...(staffOverview ? [LINKS[0]] : []), ...LINKS.filter(l => STAFF_HREFS.includes(l.href)), ACCOUNT_LINK];
   return ["admin", "superadmin"].includes(role) ? [...LINKS, DOCS_LINK, ADMIN_LINK] : LINKS;
 }
 
@@ -83,10 +83,10 @@ function Icon({ name }: { name: string }) {
   }
 }
 
-export function SidebarNav({ role, name, branchName }: { role: string; name: string; branchName?: string | null }) {
+export function SidebarNav({ role, name, branchName, staffOverview = false }: { role: string; name: string; branchName?: string | null; staffOverview?: boolean }) {
   const pathname = usePathname();
   const signOut = useSignOut();
-  const links = linksFor(role);
+  const links = linksFor(role, staffOverview);
 
   return (
     <aside className="hidden md:flex md:flex-col w-56 shrink-0 border-r border-line bg-panel min-h-screen sticky top-0">
@@ -133,9 +133,9 @@ export function SidebarNav({ role, name, branchName }: { role: string; name: str
 const PRIMARY_COUNT = 4;
 
 /** Phone tab bar: up to 4 main tabs, everything else lives under "More" so nothing is squeezed or scrolls sideways. */
-export function BottomNav({ role }: { role: string }) {
+export function BottomNav({ role, staffOverview = false }: { role: string; staffOverview?: boolean }) {
   const pathname = usePathname();
-  const links = linksFor(role);
+  const links = linksFor(role, staffOverview);
   const [open, setOpen] = useState(false);
   const isActive = (href: string) => (href === "/dashboard" ? pathname === href : pathname.startsWith(href));
 

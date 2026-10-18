@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { SidebarNav, BottomNav, MobileTopBar } from "./nav";
+import { getFlags } from "@/lib/flags";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
@@ -42,14 +43,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
     );
   }
 
+  const staffOverview = (await getFlags(supabase)).smart_overview; // staff get an Overview link only when the new overview is on
+
   return (
     <div className="flex min-h-screen">
-      <SidebarNav role={profile.role} name={profile.full_name} branchName={profile.branch_name} />
+      <SidebarNav role={profile.role} name={profile.full_name} branchName={profile.branch_name} staffOverview={staffOverview} />
       <div className="flex-1 min-w-0 pb-16 md:pb-0">
         {profile.role === "superuser" && <MobileTopBar name={profile.full_name} role={profile.role} />}
         {children}
       </div>
-      <BottomNav role={profile.role} />
+      <BottomNav role={profile.role} staffOverview={staffOverview} />
     </div>
   );
 }
