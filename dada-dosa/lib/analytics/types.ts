@@ -118,3 +118,33 @@ export type PendingApproval = {
   pending_count: number;
   oldest_date: string | null;
 };
+
+// ---- Phase B ----
+
+/** View `unusual_expenses` (migration 017). */
+export type UnusualExpense = {
+  id: string;
+  date: string;
+  branch_id: string | null;
+  vendor: string | null;
+  category: string;
+  amount: number;
+  status: string;
+  typical_amount: number;
+  times_typical: number;
+};
+
+/** Table `backup_status` (admin / superadmin only). */
+export type BackupStatus = {
+  last_run_at: string | null;
+  last_success_at: string | null;
+  ok: boolean;
+  message: string | null;
+};
+
+/** What a staff member has entered for one day. */
+export type EntryState = "none" | "pending" | "approved" | "rejected";
+export type TodayEntry = {
+  today: { sales: EntryState; salesAmount: number; expenseCount: number; expenseTotal: number };
+  yesterday: { sales: EntryState };
+};

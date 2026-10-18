@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
-  BranchRangeSummary, CreditorAgeing, DailyBranchSummary, ExpenseCategoryTotal, MissingEntry,
-  MonthlyBranchSummary, PayrollCostSummary, PendingApproval,
+  BackupStatus, BranchRangeSummary, CreditorAgeing, DailyBranchSummary, EntryState, ExpenseCategoryTotal, MissingEntry,
+  MonthlyBranchSummary, PayrollCostSummary, PendingApproval, TodayEntry, UnusualExpense,
 } from "./types";
 
 // Typed helpers over the views and functions from migration 016.
@@ -122,4 +122,59 @@ export function sumBranches(rows: BranchRangeSummary[]): Omit<BranchRangeSummary
   const t = { sales_total: 0, swiggy: 0, zomato: 0, upi: 0, cash: 0, sales_entries: 0, sales_days: 0, expenses_operating: 0, expenses_payroll: 0, expenses_drawing: 0, expenses_settlement: 0, expenses_all: 0 };
   for (const r of rows) for (const k of Object.keys(t) as (keyof typeof t)[]) t[k] += r[k];
   return t;
+}
+
+// ---- Phase B (needs migration 017) ----
+
+/** What you owed suppliers at the end of a given day (bills minus payments). */
+export async function getCreditorBalanceAsOf(sb: SupabaseClient, date: string, branchId?: string | null): Promise<Result<number>> {
+  const { data, error } = await sb.rpc("creditor_balance_asof", { p_date: date, p_branch: branchId ?? null });
+  if (error) return fail(error.message);
+  return ok(Number(data ?? 0));
+}
+
+/** Recent expenses far above what is normal for their branch and category. */
+export async function getUnusualExpenses(sb: SupabaseClient): Promise<Result<UnusualExpense[]>> {
+  const res = await selectAll<Record<string, unknown>>((a, b) =>
+    sb.from("unusual_expenses").select("*").order("date", { ascending: false }).range(a, b)
+  );
+  if (res.data === null) return fail(res.error);
+  return ok(res.data.map(r => numify<UnusualExpense>(r, ["amount", "typical_amount", "times_typical"])));
+}
+
+/** Nightly backup health. Owners only; returns null when nothing has been recorded. */
+export async function getBackupStatus(sb: SupabaseClient): Promise<Result<BackupStatus | null>> {
+  const { data, error } = await sb.from("backup_status").select("last_run_at, last_success_at, ok, message").eq("id", 1).maybeSingle();
+  if (error) return fail(error.message);
+  return ok((data as BackupStatus | null) ?? null);
+}
+
+function strongest(states: string[]): EntryState {
+  // If a day has several rows, report the "most finished" one: approved > pending > rejected > none.
+  if (states.includes("approved")) return "approved";
+  if (states.includes("pending")) return "pending";
+  if (states.includes("rejected")) return "rejected";
+  return "none";
+}
+
+/** A staff member's own checklist: today's and yesterday's sales, today's expenses. */
+export async function getTodayEntry(sb: SupabaseClient, branchId: string, today: string, yesterday: string): Promise<Result<TodayEntry>> {
+  const [s, e] = await Promise.all([
+    sb.from("sales").select("date, status, channel_total").eq("branch_id", branchId).in("date", [today, yesterday]),
+    sb.from("expenses").select("amount, status").eq("branch_id", branchId).eq("date", today),
+  ]);
+  if (s.error) return fail(s.error.message);
+  if (e.error) return fail(e.error.message);
+  const sales = (s.data ?? []) as { date: string; status: string; channel_total: number }[];
+  const todays = sales.filter(r => r.date === today);
+  const exps = ((e.data ?? []) as { amount: number; status: string }[]).filter(r => r.status !== "rejected");
+  return ok({
+    today: {
+      sales: strongest(todays.map(r => r.status)),
+      salesAmount: todays.filter(r => r.status !== "rejected").reduce((a, r) => a + Number(r.channel_total), 0),
+      expenseCount: exps.length,
+      expenseTotal: exps.reduce((a, r) => a + Number(r.amount), 0),
+    },
+    yesterday: { sales: strongest(sales.filter(r => r.date === yesterday).map(r => r.status)) },
+  });
 }
