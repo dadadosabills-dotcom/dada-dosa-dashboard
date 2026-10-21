@@ -21,9 +21,9 @@ const config: Config = {
         ember: "#E39A3B",       // dosa-tawa amber, for warm secondary highlights
       },
       fontFamily: {
-        display: ["var(--font-fraunces)", "serif"],
-        sans: ["var(--font-manrope)", "sans-serif"],
-        mono: ["var(--font-jetbrains)", "monospace"],
+        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        sans: ["var(--font-manrope)", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Arial", "sans-serif"],
+        mono: ["var(--font-jetbrains)", "ui-monospace", "Consolas", "monospace"],
       },
       boxShadow: {
         card: "0 1px 0 0 rgba(232,196,104,0.07) inset, 0 8px 24px -12px rgba(0,0,0,0.7)",
