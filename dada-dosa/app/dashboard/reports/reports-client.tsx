@@ -67,7 +67,7 @@ export default function ReportsClient({ role, branches, ownBranchId, ownBranchNa
   const unmigrated = data && !data.cur.data && /does not exist|could not find the function|schema cache|permission denied/i.test(data.cur.error ?? "");
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full max-w-[1760px]">
       <Link href="/dashboard" className="text-xs text-muted hover:text-cream inline-flex items-center min-h-[44px]">← Back to overview</Link>
       <h1 className="font-display text-[28px] tracking-tight text-cream">Reports</h1>
       <p className="text-sm text-muted mt-1">{isOwner ? (f.branchId ? `${names.get(f.branchId) ?? "One branch"}` : "All branches") : ownBranchName ?? "Your branch"} · {fmtDate(f.range.from)}{f.range.from !== f.range.to ? ` to ${fmtDate(f.range.to)}` : ""}</p>

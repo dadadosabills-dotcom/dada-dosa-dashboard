@@ -116,7 +116,7 @@ export function DrawingsClient({
   }
 
   return (
-    <main className="px-5 py-6 md:px-8 md:py-8 max-w-5xl">
+    <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
       <header className="flex items-baseline justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="font-display text-[28px] tracking-tight text-cream">Drawings</h1>

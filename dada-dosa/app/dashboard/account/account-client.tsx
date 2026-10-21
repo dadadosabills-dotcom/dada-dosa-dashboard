@@ -63,7 +63,7 @@ export function AccountClient({ name, branchName, employeeName, advances, runs, 
   const totalDeducted = runs.reduce((a, r) => a + Number(r.deductions ?? 0), 0);
 
   return (
-    <main className="px-5 py-6 md:px-8 md:py-8 max-w-4xl">
+    <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
       <header className="mb-6">
         <h1 className="font-display text-[28px] tracking-tight text-cream">My Account</h1>
         <p className="text-muted text-sm mt-1">{name}{branchName ? ` · ${branchName}` : ""}</p>

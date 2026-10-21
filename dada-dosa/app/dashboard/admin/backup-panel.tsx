@@ -33,7 +33,7 @@ function DriveBackupStatus() {
   const bad = st ? !st.ok || stale : false;
 
   return (
-    <section className="card p-5 max-w-3xl">
+    <section className="card p-5 w-full max-w-[1760px]">
       <h2 className="font-display text-lg text-cream mb-1">Nightly Google Drive backup</h2>
       {st === undefined ? (
         <p className="text-muted text-sm">Checking…</p>
@@ -122,7 +122,7 @@ export function BackupPanel({ currentUserId, currentUserRole }: { currentUserId:
   const writtenTotal = result ? Object.values(result.perTable).reduce((a, b) => a + b.written, 0) : 0;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 w-full max-w-[1760px]">
       <DriveBackupStatus />
       <section className="card p-5">
         <h2 className="font-display text-lg text-cream mb-1">Download a backup</h2>

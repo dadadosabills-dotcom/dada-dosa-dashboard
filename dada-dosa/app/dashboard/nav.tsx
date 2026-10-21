@@ -89,8 +89,8 @@ export function SidebarNav({ role, name, branchName, staffOverview = false }: { 
   const links = linksFor(role, staffOverview);
 
   return (
-    <aside className="hidden md:flex md:flex-col w-60 shrink-0 border-r border-line top-0 h-screen sticky bg-gradient-to-b from-panel via-panel to-leaf-deep/50">
-      <div className="px-5 pt-6 pb-5">
+    <aside className="hidden md:flex md:flex-col w-60 shrink-0 border-r border-line top-0 h-[100dvh] overflow-hidden sticky bg-gradient-to-b from-panel via-panel to-leaf-deep/50">
+      <div className="px-5 pt-6 pb-5 shrink-0">
         <div className="flex items-center gap-3">
           <Image src="/logo.png" alt="" width={44} height={44} className="rounded-full ring-1 ring-gold/40 shadow-[0_0_24px_-4px_rgba(232,196,104,0.35)]" />
           <div>
@@ -101,7 +101,7 @@ export function SidebarNav({ role, name, branchName, staffOverview = false }: { 
         <div className="gold-rule mt-5" />
       </div>
 
-      <nav className="flex-1 px-3 pb-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 min-h-0 px-3 pb-4 space-y-1 overflow-y-auto">
         {links.map((l) => {
           const active = l.href === "/dashboard" ? pathname === l.href : pathname.startsWith(l.href);
           return (
@@ -121,7 +121,7 @@ export function SidebarNav({ role, name, branchName, staffOverview = false }: { 
         })}
       </nav>
 
-      <div className="m-3 rounded-md border border-line bg-ink/50 px-4 py-3">
+      <div className="m-3 shrink-0 rounded-md border border-line bg-ink/50 px-4 py-3">
         <p className="text-sm text-cream truncate font-semibold">{name}</p>
         <p className="mt-1.5 flex items-center gap-2 text-[11px]">
           <span className="rounded-full bg-gold/15 text-gold px-2 py-0.5 capitalize">{role}</span>

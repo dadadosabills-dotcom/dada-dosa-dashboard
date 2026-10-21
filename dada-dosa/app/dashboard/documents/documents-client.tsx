@@ -114,7 +114,7 @@ export function DocumentsClient({ folders, files, canManage, userId, missingSetu
   }
 
   return (
-    <main className="px-5 py-6 md:px-8 md:py-8 max-w-4xl">
+    <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
       <header className="mb-5">
         <h1 className="font-display text-[28px] tracking-tight text-cream">Branch Documents</h1>
         <p className="text-muted text-sm mt-1">{canManage ? "Create folders and upload files. Admins can view and download." : "View and download. Only a SuperAdmin can add or remove folders and files."}</p>

@@ -12,7 +12,7 @@ export default async function ReportsPage() {
   if (!(await getFlags(supabase)).insights_reports) redirect("/dashboard");
   const branches = await getBranches();
   return (
-    <main className="px-5 py-6 md:px-8 md:py-8 max-w-6xl">
+    <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
       <ReportsClient
         role={profile.role as "admin" | "superadmin" | "superuser"}
         branches={branches}

@@ -97,7 +97,7 @@ export default function SmartOverview({ role, name, branches, ownBranchId, ownBr
   const setupProblem = data && !data.summary.data && looksUnmigrated(data.summary.error);
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full max-w-[1760px]">
       <p className="text-xs text-muted">{fmtDate(f.today)}</p>
       <h1 className="font-display text-[28px] tracking-tight text-cream mt-1">{hello}, {name.split(" ")[0]}</h1>
       <p className="text-sm text-muted mt-1">

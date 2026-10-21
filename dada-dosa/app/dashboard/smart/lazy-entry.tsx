@@ -11,7 +11,7 @@ import type { StaffToday as StaffTodayType } from "./staff-today";
 
 function Loading({ label }: { label: string }) {
   return (
-    <div className="max-w-5xl" role="status" aria-label={label}>
+    <div className="w-full max-w-[1760px]" role="status" aria-label={label}>
       <div className="animate-pulse space-y-3">
         <div className="h-4 w-24 rounded bg-panel2" />
         <div className="h-8 w-56 rounded bg-panel2" />

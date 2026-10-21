@@ -8,7 +8,7 @@
     color-scheme: dark;
   }
   body {
-    @apply text-cream antialiased;
+    @apply font-sans text-cream antialiased;
     background-color: #0D0D0D;
     /* Ambient light taken from the logo: banana-leaf green from the top left,
        a faint touch of the pink cloth from the bottom right. */

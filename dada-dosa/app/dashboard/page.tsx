@@ -10,7 +10,7 @@ export default async function OverviewPage({ searchParams }: { searchParams?: { 
   // New overview, behind the `smart_overview` flag (OFF by default). "?view=classic" always shows the original screen.
   if (profile && searchParams?.view !== "classic" && (await getFlags(supabase)).smart_overview) {
     return (
-      <main className="px-5 py-6 md:px-8 md:py-8 max-w-6xl">
+      <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
         {profile.role === "user" ? (
           <LazyStaffToday name={profile.full_name} branchId={profile.branch_id} branchName={profile.branch_name} />
         ) : (

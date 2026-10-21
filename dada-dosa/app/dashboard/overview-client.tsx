@@ -185,7 +185,7 @@ export function OverviewClient({
   }, [fSales, fExpenses, canPickBranch, branchFilter, branches]);
 
   return (
-    <main className="px-5 py-6 md:px-8 md:py-8 max-w-6xl">
+    <main className="px-5 py-6 md:px-8 md:py-8 w-full max-w-[1760px]">
       <header className="mb-6">
         <h1 className="font-display text-[28px] tracking-tight text-cream">Overview</h1>
         <p className="text-muted text-sm mt-1">
