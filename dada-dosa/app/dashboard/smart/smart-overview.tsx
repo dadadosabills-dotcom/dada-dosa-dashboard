@@ -10,6 +10,7 @@ import { fmtINRCompact, plural } from "@/lib/analytics/format";
 import { loadOverview, type OverviewData } from "@/lib/analytics/overview-data";
 import { sumBranches } from "@/lib/analytics/queries";
 import { useGlobalFilters } from "@/lib/analytics/use-filters";
+import { getFlags } from "@/lib/flags";
 import { fmtINR, type Branch } from "@/lib/constants";
 import { AttentionPanel } from "./attention-panel";
 import { ChannelMix } from "./channel-mix";
@@ -44,7 +45,11 @@ export default function SmartOverview({ role, name, branches, ownBranchId, ownBr
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [tick, setTick] = useState(0);
+  const [showReports, setShowReports] = useState(false);
   const latest = useRef(0);
+
+  // The Reports button appears only when the `insights_reports` flag is on.
+  useEffect(() => { getFlags(sb).then(fl => setShowReports(fl.insights_reports)); }, [sb]);
 
   useEffect(() => {
     if (!f.hydrated) return;
@@ -98,6 +103,9 @@ export default function SmartOverview({ role, name, branches, ownBranchId, ownBr
       <p className="text-sm text-muted mt-1">
         {isOwner ? (scopeName ? `How ${scopeName} is doing` : "How all your branches are doing") : `How ${ownBranchName ?? "your branch"} is doing`}
       </p>
+      {showReports && (
+        <Link href="/dashboard/reports" className="btn-ghost inline-block mt-3 min-h-[44px] leading-[26px]">Reports: what changed, profit &amp; loss, patterns →</Link>
+      )}
 
       <FiltersBar
         preset={f.preset} onPreset={f.setPreset} range={f.range} custom={f.custom} onCustom={f.setCustom}

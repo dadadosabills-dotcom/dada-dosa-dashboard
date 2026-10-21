@@ -148,3 +148,14 @@ export type TodayEntry = {
   today: { sales: EntryState; salesAmount: number; expenseCount: number; expenseTotal: number };
   yesterday: { sales: EntryState };
 };
+
+// ---- Phase C ----
+
+/** RPC `weekday_branch_sales`. dow: 1 = Monday ... 7 = Sunday. */
+export type WeekdayBranchSales = { branch_id: string | null; dow: number; sales_total: number; days: number };
+
+/** RPC `expense_category_branch_range`. */
+export type CategoryBranchAmount = { branch_id: string | null; category: string; kind: ExpenseKind; amount: number };
+
+/** RPC `cash_flow_range`: money out, by how it was paid. */
+export type CashFlowRow = { payment_mode: string; kind: ExpenseKind; amount: number; entries: number };

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   BackupStatus, BranchRangeSummary, CreditorAgeing, DailyBranchSummary, EntryState, ExpenseCategoryTotal, MissingEntry,
   MonthlyBranchSummary, PayrollCostSummary, PendingApproval, TodayEntry, UnusualExpense,
+  CashFlowRow, CategoryBranchAmount, WeekdayBranchSales,
 } from "./types";
 
 // Typed helpers over the views and functions from migration 016.
@@ -177,4 +178,27 @@ export async function getTodayEntry(sb: SupabaseClient, branchId: string, today:
     },
     yesterday: { sales: strongest(sales.filter(r => r.date === yesterday).map(r => r.status)) },
   });
+}
+
+// ---- Phase C (needs migration 018) ----
+
+/** Sales by weekday and branch (dow 1 = Monday ... 7 = Sunday). */
+export async function getWeekdayBranchSales(sb: SupabaseClient, from: string, to: string, branchId?: string | null): Promise<Result<WeekdayBranchSales[]>> {
+  const { data, error } = await sb.rpc("weekday_branch_sales", { p_from: from, p_to: to, p_branch: branchId ?? null });
+  if (error) return fail(error.message);
+  return ok(((data ?? []) as Record<string, unknown>[]).map(r => numify<WeekdayBranchSales>(r, ["dow", "sales_total", "days"])));
+}
+
+/** Approved expenses by branch and category. */
+export async function getCategoryByBranch(sb: SupabaseClient, from: string, to: string, branchId?: string | null): Promise<Result<CategoryBranchAmount[]>> {
+  const { data, error } = await sb.rpc("expense_category_branch_range", { p_from: from, p_to: to, p_branch: branchId ?? null });
+  if (error) return fail(error.message);
+  return ok(((data ?? []) as Record<string, unknown>[]).map(r => numify<CategoryBranchAmount>(r, ["amount"])));
+}
+
+/** Money going out, by payment mode (Cash / Bank / Credit) and purpose. */
+export async function getCashFlowOut(sb: SupabaseClient, from: string, to: string, branchId?: string | null): Promise<Result<CashFlowRow[]>> {
+  const { data, error } = await sb.rpc("cash_flow_range", { p_from: from, p_to: to, p_branch: branchId ?? null });
+  if (error) return fail(error.message);
+  return ok(((data ?? []) as Record<string, unknown>[]).map(r => numify<CashFlowRow>(r, ["amount", "entries"])));
 }

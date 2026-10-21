@@ -20,3 +20,12 @@ export function daysAgoWords(days: number): string {
   if (days === 1) return "yesterday";
   return `${days} days ago`;
 }
+
+/** Very short money for tight cells: 950, 45k, 1.2L, 2.1Cr */
+export function fmtShort(n: number): string {
+  const abs = Math.abs(n), sign = n < 0 ? "-" : "";
+  if (abs >= 1e7) return `${sign}${+(abs / 1e7).toFixed(1)}Cr`;
+  if (abs >= 1e5) return `${sign}${+(abs / 1e5).toFixed(1)}L`;
+  if (abs >= 1000) return `${sign}${Math.round(abs / 1000)}k`;
+  return `${sign}${Math.round(abs)}`;
+}
